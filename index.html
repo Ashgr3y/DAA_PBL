@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Knapsack Lab | Backtracking vs Branch & Bound</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <p class="eyebrow">DAA PBL #20 · Interactive Showcase</p>
+    <h1>0/1 Knapsack <span>Algorithm Lab</span></h1>
+    <p class="subtitle">Compare authentic Backtracking and Branch &amp; Bound solvers side by side.</p>
+  </header>
+
+  <main>
+    <section class="panel input-panel" aria-labelledby="problem-title">
+      <div class="section-title"><div><p class="kicker">Step 1</p><h2 id="problem-title">Define the problem</h2></div><div class="actions"><button class="secondary" id="demoBtn">Load demo</button><button class="ghost" id="resetBtn">Reset</button></div></div>
+      <div class="capacity-row"><label for="capacity">Knapsack capacity <input id="capacity" type="number" min="1" step="1" value="15" /></label><span>Each item may be chosen <strong>once</strong>.</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Item name</th><th>Weight</th><th>Value</th><th></th></tr></thead><tbody id="itemsBody"></tbody></table></div>
+      <div class="bottom-actions"><button class="add" id="addItemBtn">+ Add item</button><button class="run" id="runBtn">Run both algorithms <span>→</span></button></div>
+      <p class="message" id="message" role="alert" aria-live="polite"></p>
+    </section>
+
+    <section class="results" id="results" hidden aria-live="polite">
+      <div class="result-heading"><div><p class="kicker">Step 2</p><h2>Efficiency comparison</h2></div><div id="verification" class="verification"></div></div>
+      <div class="algorithm-grid">
+        <article class="algorithm-card backtracking"><div class="card-top"><div><p>EXHAUSTIVE SEARCH</p><h3>Backtracking</h3></div><span class="tag">DFS</span></div><div class="metrics" id="btMetrics"></div><div class="selection" id="btSelection"></div></article>
+        <article class="algorithm-card bnb"><div class="card-top"><div><p>INFORMED SEARCH</p><h3>Branch &amp; Bound</h3></div><span class="tag">Best-first</span></div><div class="metrics" id="bbMetrics"></div><div class="selection" id="bbSelection"></div></article>
+      </div>
+      <article class="panel chart-panel"><div class="section-title"><div><p class="kicker">Visual evidence</p><h2>Search effort</h2></div><span class="hint">Lower is usually better</span></div><div id="chart" class="chart"></div><p class="chart-note">Execution time can vary between runs because it is extremely small and depends on the device. Nodes explored is the more stable comparison.</p></article>
+    </section>
+
+    <section class="learn-grid">
+      <article class="panel learn-card"><p class="kicker">How the decisions work</p><h2>State-space tree</h2><p>Every level represents one item. From each node, the solver branches into <strong>take</strong> or <strong>skip</strong>, producing a binary decision tree.</p><div class="tree"><div class="root">Start</div><div class="branches"><div><span>Take item</span><b>✓</b></div><div><span>Skip item</span><b>×</b></div></div><div class="tree-caption">Continue until all items are decided; keep only feasible choices.</div></div></article>
+      <article class="panel learn-card"><p class="kicker">Viva-ready notes</p><h2>Why Branch &amp; Bound wins</h2><ul><li><strong>Backtracking</strong> visits feasible take/skip paths depth-first and cuts only overweight paths.</li><li><strong>Branch &amp; Bound</strong> computes an optimistic fractional-knapsack <em>upper bound</em>. If it cannot beat the current best value, that whole subtree is discarded.</li><li>Both are exact 0/1 solvers: no dynamic programming table is used.</li><li>Worst case for both remains <strong>O(2ⁿ)</strong> time. Backtracking uses <strong>O(n)</strong> call-stack space; best-first Branch &amp; Bound can hold <strong>O(2ⁿ)</strong> live nodes.</li></ul></article>
+    </section>
+  </main>
+  <footer>Built for a classroom demo · Measurements use <code>performance.now()</code></footer>
+  <script src="app.js"></script>
+</body>
+</html>
