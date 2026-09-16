@@ -31,6 +31,260 @@
       <article class="panel chart-panel"><div class="section-title"><div><p class="kicker">Visual evidence</p><h2>Search effort</h2></div><span class="hint">Lower is usually better</span></div><div id="chart" class="chart"></div><p class="chart-note">Execution time can vary between runs because it is extremely small and depends on the device. Nodes explored is the more stable comparison.</p></article>
     </section>
 
+    <section class="panel visualization-panel" id="visualizationPanel" hidden>
+
+    <div class="section-title">
+        <div>
+        <p class="kicker">Step 3</p>
+        <h2>Live algorithm visualization</h2>
+        </div>
+
+        <span class="hint" id="visualizationStatus">
+        Ready
+        </span>
+    </div>
+
+    <!-- Algorithm selector -->
+    <div class="visualization-toolbar">
+
+        <div class="algorithm-switch">
+        <button
+            class="algorithm-tab active"
+            id="btVisualBtn"
+            type="button">
+            Backtracking
+        </button>
+
+        <button
+            class="algorithm-tab"
+            id="bbVisualBtn"
+            type="button">
+            Branch &amp; Bound
+        </button>
+        </div>
+
+        <div class="visual-controls">
+
+        <button
+            class="control-btn primary-control"
+            id="playBtn"
+            type="button">
+            ▶ Play
+        </button>
+
+        <button
+            class="control-btn"
+            id="pauseBtn"
+            type="button">
+            ⏸ Pause
+        </button>
+
+        <button
+            class="control-btn"
+            id="stepBtn"
+            type="button">
+            ⏭ Next
+        </button>
+
+        <button
+            class="control-btn"
+            id="restartVisualBtn"
+            type="button">
+            ↻ Restart
+        </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- Speed -->
+    <div class="speed-row">
+
+        <label for="speedControl">
+        Animation speed
+        </label>
+
+        <input
+        id="speedControl"
+        type="range"
+        min="100"
+        max="1500"
+        step="100"
+        value="600">
+
+        <span id="speedValue">
+        600 ms
+        </span>
+
+    </div>
+
+
+    <!-- Visualization area -->
+    <div class="visualization-layout">
+
+        <!-- TREE -->
+        <div class="tree-panel">
+
+        <div class="visual-header">
+
+            <div>
+            <p class="visual-kicker">State-space tree</p>
+
+            <h3 id="visualAlgorithmTitle">
+                Backtracking
+            </h3>
+            </div>
+
+            <div class="trace-progress">
+
+            <strong id="traceCurrent">
+                0
+            </strong>
+
+            <span>/</span>
+
+            <span id="traceTotal">
+                0
+            </span>
+
+            <small>nodes</small>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="stateTree"
+            class="state-tree"
+            aria-live="polite">
+
+            <div class="tree-empty">
+            Run the algorithm to generate the state-space tree.
+            </div>
+
+        </div>
+
+        </div>
+
+
+        <!-- NODE DETAILS -->
+        <div class="node-details-panel">
+
+        <p class="visual-kicker">
+            Current execution
+        </p>
+
+        <h3 id="selectedNodeTitle">
+            No node selected
+        </h3>
+
+
+        <div
+            id="nodeDetails"
+            class="node-details">
+
+            <div class="detail-empty">
+            Press <strong>Play</strong> or
+            <strong>Next</strong> to inspect a node.
+            </div>
+
+        </div>
+
+
+        <!-- B&B upper bound panel -->
+        <div
+            id="upperBoundPanel"
+            class="upper-bound-panel"
+            hidden>
+
+            <div class="upper-bound-heading">
+
+            <div>
+                <p class="visual-kicker">
+                Branch &amp; Bound
+                </p>
+
+                <h3>
+                Upper-bound calculation
+                </h3>
+            </div>
+
+            <span id="boundDecision">
+                —
+            </span>
+
+            </div>
+
+
+            <div class="bound-summary">
+
+            <div>
+                <span>Current value</span>
+                <strong id="boundCurrentValue">0</strong>
+            </div>
+
+            <div>
+                <span>Current weight</span>
+                <strong id="boundCurrentWeight">0</strong>
+            </div>
+
+            <div>
+                <span>Remaining capacity</span>
+                <strong id="boundRemaining">0</strong>
+            </div>
+
+            </div>
+
+
+            <div class="bound-calculation">
+
+            <p>Fractional-knapsack bound</p>
+
+            <div id="boundSteps">
+                —
+            </div>
+
+            <div class="bound-total">
+
+                <span>Upper Bound</span>
+
+                <strong id="boundValue">
+                —
+                </strong>
+
+            </div>
+
+            <div class="bound-best">
+
+                <span>Current Best</span>
+
+                <strong id="boundBest">
+                —
+                </strong>
+
+            </div>
+
+            </div>
+
+
+            <div
+            id="boundReason"
+            class="bound-reason">
+
+            —
+
+            </div>
+
+        </div>
+
+        </div>
+
+    </div>
+
+    </section>
+
     <section class="learn-grid">
       <article class="panel learn-card"><p class="kicker">How the decisions work</p><h2>State-space tree</h2><p>Every level represents one item. From each node, the solver branches into <strong>take</strong> or <strong>skip</strong>, producing a binary decision tree.</p><div class="tree"><div class="root">Start</div><div class="branches"><div><span>Take item</span><b>✓</b></div><div><span>Skip item</span><b>×</b></div></div><div class="tree-caption">Continue until all items are decided; keep only feasible choices.</div></div></article>
       <article class="panel learn-card"><p class="kicker">Viva-ready notes</p><h2>Why Branch &amp; Bound wins</h2><ul><li><strong>Backtracking</strong> visits feasible take/skip paths depth-first and cuts only overweight paths.</li><li><strong>Branch &amp; Bound</strong> computes an optimistic fractional-knapsack <em>upper bound</em>. If it cannot beat the current best value, that whole subtree is discarded.</li><li>Both are exact 0/1 solvers: no dynamic programming table is used.</li><li>Worst case for both remains <strong>O(2ⁿ)</strong> time. Backtracking uses <strong>O(n)</strong> call-stack space; best-first Branch &amp; Bound can hold <strong>O(2ⁿ)</strong> live nodes.</li></ul></article>
