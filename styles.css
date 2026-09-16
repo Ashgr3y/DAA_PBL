@@ -1,1 +1,929 @@
 :root{--ink:#18233b;--muted:#66728b;--paper:#f6f8fc;--line:#dfe5f0;--navy:#263b75;--violet:#7446d8;--aqua:#20b9ad;--orange:#fb8a3e;--white:#fff}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 Inter,Segoe UI,Arial,sans-serif}.hero{padding:58px 24px 50px;text-align:center;color:white;background:radial-gradient(circle at 22% 20%,#5668bb 0,transparent 34%),radial-gradient(circle at 82% 15%,#8f5ee0 0,transparent 30%),#162750}.eyebrow,.kicker{margin:0 0 6px;font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8170d7}.hero .eyebrow{color:#c8ccf7}.hero h1{font-size:clamp(2rem,5vw,3.35rem);line-height:1.1;margin:0}.hero h1 span{color:#9ee8df}.subtitle{margin:14px 0 0;color:#dce5ff;font-size:1.05rem}main{max-width:1120px;margin:-25px auto 0;padding:0 20px 48px}.panel,.algorithm-card{background:var(--white);border:1px solid var(--line);border-radius:17px;box-shadow:0 8px 24px #2e43710d}.panel{padding:26px}.section-title,.result-heading,.card-top,.bottom-actions,.capacity-row{display:flex;align-items:center;justify-content:space-between;gap:18px}.section-title h2,.result-heading h2,.learn-card h2{margin:0;font-size:1.3rem}.actions{display:flex;gap:9px}button{border:0;border-radius:9px;padding:10px 15px;font:700 .9rem inherit;cursor:pointer;transition:.15s transform,.15s opacity}button:hover{transform:translateY(-1px)}.secondary{background:#eae5fc;color:#5631bb}.ghost{background:#f0f3f8;color:#526079}.capacity-row{margin:24px 0 15px;padding:14px 16px;background:#f4f6fb;border-radius:10px;color:var(--muted)}label{font-weight:750;color:var(--ink)}input{width:92px;margin-left:8px;padding:8px;border:1px solid #cbd4e4;border-radius:7px;color:var(--ink);font:inherit}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse}th{text-align:left;color:var(--muted);font-size:.75rem;letter-spacing:.07em;text-transform:uppercase}th,td{padding:9px 7px;border-bottom:1px solid #edf0f5}td input{margin:0;width:100%;min-width:80px}.delete{padding:5px 9px;background:#fff0ee;color:#ce4c42}.bottom-actions{margin-top:18px}.add{background:#e5faf7;color:#148e85}.run{background:linear-gradient(110deg,var(--navy),var(--violet));color:#fff;padding:12px 20px}.run span{font-size:1.2rem;margin-left:5px}.message{margin:14px 0 0;min-height:1.4em;color:#c84038;font-weight:650}.results{margin-top:30px}.result-heading{margin-bottom:15px}.verification{padding:9px 13px;border-radius:100px;font-size:.85rem;font-weight:750}.verified{background:#daf7ed;color:#147356}.failed{background:#fff0ef;color:#ba4137}.algorithm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}.algorithm-card{padding:23px;border-top:5px solid var(--orange)}.bnb{border-top-color:var(--aqua)}.card-top p{margin:0;color:var(--muted);font-size:.68rem;font-weight:800;letter-spacing:.1em}.card-top h3{margin:2px 0 0;font-size:1.35rem}.tag{font-size:.76rem;font-weight:800;padding:5px 8px;border-radius:5px;background:#fff2e7;color:#cf641c}.bnb .tag{background:#ddf8f5;color:#0b887e}.metrics{display:grid;grid-template-columns:1fr 1fr;margin:18px 0 14px;border-top:1px solid var(--line);border-left:1px solid var(--line)}.metric{padding:10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.metric b{display:block;font-size:1.1rem}.metric span{font-size:.72rem;color:var(--muted);font-weight:700}.selection{font-size:.87rem;color:#44526d}.selection strong{color:var(--ink)}.chart-panel{margin-top:18px}.hint{color:var(--muted);font-size:.8rem}.chart{display:grid;gap:18px;margin-top:22px}.chart-row{display:grid;grid-template-columns:125px 1fr;align-items:center;gap:12px}.chart-label{font-size:.82rem;font-weight:800}.bar-stack{display:grid;gap:7px}.bar-line{display:flex;align-items:center;gap:8px}.bar{height:20px;min-width:3px;border-radius:5px;background:var(--orange)}.bar.bb{background:var(--aqua)}.bar-line small{font-weight:750;color:#4b5870}.chart-note{color:var(--muted);font-size:.81rem;margin:20px 0 0}.learn-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}.learn-card p{color:#526079}.learn-card ul{margin:12px 0 0;padding-left:20px;color:#46536c}.learn-card li{margin:7px 0}.tree{margin-top:19px;text-align:center;background:#f7f8fc;border-radius:12px;padding:12px}.root{display:inline-block;background:var(--navy);color:#fff;border-radius:7px;padding:5px 17px;font-weight:800}.branches{display:flex;justify-content:center;gap:50px;margin-top:13px}.branches div{display:grid;gap:5px;color:var(--muted);font-size:.78rem}.branches b{margin:auto;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#d9f7ee;color:#10826e}.branches div+div b{background:#fae4e4;color:#bf4c49}.tree-caption{margin-top:9px;color:var(--muted);font-size:.78rem}footer{text-align:center;padding:22px;color:#728099;font-size:.82rem}code{color:#6853bf}@media(max-width:680px){.algorithm-grid,.learn-grid{grid-template-columns:1fr}.capacity-row{align-items:flex-start;flex-direction:column}.section-title,.result-heading{align-items:flex-start;flex-direction:column}.chart-row{grid-template-columns:100px 1fr}.panel{padding:18px}}
+/* =========================================================
+   PHASE 1 — LIVE ALGORITHM VISUALIZATION
+========================================================= */
+
+.visualization-panel {
+    margin-top: 30px;
+}
+
+.visualization-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+
+/* ---------------------------------------------------------
+   ALGORITHM TABS
+--------------------------------------------------------- */
+
+.algorithm-switch {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    background: #f0f3f8;
+    border-radius: 10px;
+}
+
+.algorithm-tab {
+    background: transparent;
+    color: var(--muted);
+    padding: 9px 14px;
+    border-radius: 7px;
+}
+
+.algorithm-tab:hover {
+    transform: none;
+}
+
+.algorithm-tab.active {
+    background: var(--white);
+    color: var(--navy);
+    box-shadow: 0 2px 8px #263b7512;
+}
+
+
+/* ---------------------------------------------------------
+   CONTROLS
+--------------------------------------------------------- */
+
+.visual-controls {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.control-btn {
+    background: #f0f3f8;
+    color: #4e5c75;
+    padding: 9px 12px;
+}
+
+.control-btn:hover {
+    transform: translateY(-1px);
+}
+
+.primary-control {
+    background: var(--navy);
+    color: white;
+}
+
+
+/* ---------------------------------------------------------
+   SPEED
+--------------------------------------------------------- */
+
+.speed-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+    padding: 10px 13px;
+    background: #f7f8fc;
+    border-radius: 9px;
+    color: var(--muted);
+    font-size: .82rem;
+}
+
+.speed-row label {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.speed-row input {
+    width: 180px;
+    margin: 0;
+}
+
+#speedValue {
+    min-width: 55px;
+    font-weight: 750;
+}
+
+
+/* ---------------------------------------------------------
+   MAIN VISUALIZATION LAYOUT
+--------------------------------------------------------- */
+
+.visualization-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(280px, .8fr);
+    gap: 18px;
+    margin-top: 18px;
+}
+
+
+/* ---------------------------------------------------------
+   TREE PANEL
+--------------------------------------------------------- */
+
+.tree-panel,
+.node-details-panel {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fbfcfe;
+}
+
+.tree-panel {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.visual-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 17px 19px;
+    border-bottom: 1px solid var(--line);
+    background: white;
+}
+
+.visual-kicker {
+    margin: 0 0 3px;
+    color: var(--muted);
+    font-size: .67rem;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.visual-header h3,
+.node-details-panel h3,
+.upper-bound-panel h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.trace-progress {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    color: var(--muted);
+}
+
+.trace-progress strong {
+    color: var(--navy);
+    font-size: 1.25rem;
+}
+
+.trace-progress small {
+    margin-left: 4px;
+    font-size: .7rem;
+}
+
+
+/* ---------------------------------------------------------
+   TREE CANVAS
+--------------------------------------------------------- */
+
+.state-tree {
+    min-height: 430px;
+    max-height: 620px;
+    overflow: auto;
+    padding: 25px;
+    position: relative;
+}
+
+.tree-empty {
+    display: grid;
+    place-items: center;
+    min-height: 360px;
+    color: var(--muted);
+    text-align: center;
+    font-size: .9rem;
+}
+
+
+/*
+   Each level of the state-space tree is represented
+   horizontally.
+*/
+
+.tree-level {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    min-width: max-content;
+    margin-bottom: 35px;
+    position: relative;
+}
+
+
+/* ---------------------------------------------------------
+   TREE NODE
+--------------------------------------------------------- */
+
+.state-node {
+    position: relative;
+    width: 145px;
+    min-height: 95px;
+    padding: 10px;
+    border: 2px solid #dce2ed;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 3px 10px #263b750c;
+    transition:
+        transform .2s,
+        border-color .2s,
+        box-shadow .2s,
+        opacity .2s;
+    cursor: pointer;
+}
+
+.state-node:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px #263b7515;
+}
+
+.state-node.active {
+    border-color: var(--navy);
+    box-shadow: 0 0 0 3px #263b7520;
+    transform: translateY(-3px);
+}
+
+.state-node.explore {
+    border-color: #8d9bc0;
+}
+
+.state-node.prune {
+    border-color: #df8b84;
+    background: #fff7f6;
+}
+
+.state-node.best {
+    border-color: var(--aqua);
+    background: #f1fcfa;
+    box-shadow: 0 0 0 3px #20b9ad18;
+}
+
+
+/* ---------------------------------------------------------
+   NODE CONTENT
+--------------------------------------------------------- */
+
+.node-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 7px;
+}
+
+.node-id {
+    font-size: .64rem;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+.node-status {
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: .58rem;
+    font-weight: 850;
+    letter-spacing: .04em;
+}
+
+.status-explore {
+    background: #edf1f8;
+    color: #56647d;
+}
+
+.status-prune {
+    background: #fae2df;
+    color: #bd5149;
+}
+
+.status-best {
+    background: #d9f7ee;
+    color: #10826e;
+}
+
+.status-leaf {
+    background: #eee8fc;
+    color: #6541b6;
+}
+
+.node-decision {
+    font-size: .73rem;
+    font-weight: 850;
+    color: var(--navy);
+    margin-bottom: 4px;
+}
+
+.node-item {
+    font-size: .72rem;
+    color: #526079;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.node-values {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 7px;
+    border-top: 1px solid #edf0f5;
+    font-size: .67rem;
+    color: var(--muted);
+}
+
+.node-values strong {
+    color: var(--ink);
+}
+
+
+/* ---------------------------------------------------------
+   NODE DETAILS
+--------------------------------------------------------- */
+
+.node-details-panel {
+    padding: 19px;
+    background: white;
+}
+
+.node-details {
+    margin-top: 15px;
+}
+
+.detail-empty {
+    padding: 15px;
+    border-radius: 9px;
+    background: #f7f8fc;
+    color: var(--muted);
+    font-size: .82rem;
+    line-height: 1.6;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.detail-cell {
+    padding: 10px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+
+.detail-cell:nth-child(even) {
+    border-right: 0;
+}
+
+.detail-cell span {
+    display: block;
+    color: var(--muted);
+    font-size: .67rem;
+    font-weight: 750;
+}
+
+.detail-cell strong {
+    display: block;
+    margin-top: 2px;
+    font-size: .95rem;
+}
+
+.execution-reason {
+    margin-top: 12px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    background: #f4f6fb;
+    color: #526079;
+    font-size: .78rem;
+}
+
+.execution-reason strong {
+    color: var(--ink);
+}
+
+
+/* ---------------------------------------------------------
+   UPPER BOUND
+--------------------------------------------------------- */
+
+.upper-bound-panel {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+}
+
+.upper-bound-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+#boundDecision {
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: #ddf8f5;
+    color: #0b887e;
+    font-size: .68rem;
+    font-weight: 850;
+}
+
+.bound-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-top: 13px;
+}
+
+.bound-summary div {
+    padding: 9px;
+    background: #f6f8fb;
+    border-radius: 7px;
+}
+
+.bound-summary span,
+.bound-best span,
+.bound-total span {
+    display: block;
+    color: var(--muted);
+    font-size: .65rem;
+    font-weight: 700;
+}
+
+.bound-summary strong {
+    display: block;
+    margin-top: 2px;
+    font-size: .9rem;
+}
+
+.bound-calculation {
+    margin-top: 12px;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+}
+
+.bound-calculation > p {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: .68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.bound-step {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid #edf0f5;
+    font-size: .73rem;
+}
+
+.bound-step:last-child {
+    border-bottom: 0;
+}
+
+.bound-step span {
+    color: #526079;
+}
+
+.bound-step strong {
+    color: var(--ink);
+}
+
+.bound-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 2px solid var(--line);
+}
+
+.bound-total span {
+    color: var(--ink);
+    font-weight: 800;
+}
+
+.bound-total strong {
+    font-size: 1.15rem;
+    color: var(--navy);
+}
+
+.bound-best {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.bound-best strong {
+    color: var(--muted);
+}
+
+.bound-reason {
+    margin-top: 10px;
+    padding: 9px 10px;
+    border-radius: 7px;
+    background: #eef8f6;
+    color: #157b70;
+    font-size: .73rem;
+    font-weight: 750;
+}
+
+.bound-reason.pruned {
+    background: #fff0ee;
+    color: #bd4c45;
+}
+
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+--------------------------------------------------------- */
+
+@media (max-width: 850px) {
+
+    .visualization-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .state-tree {
+        min-height: 360px;
+    }
+}
+
+
+@media (max-width: 680px) {
+
+    .visualization-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .algorithm-switch {
+        width: 100%;
+    }
+
+    .algorithm-tab {
+        flex: 1;
+    }
+
+    .visual-controls {
+        width: 100%;
+    }
+
+    .control-btn {
+        flex: 1;
+    }
+
+    .speed-row {
+        flex-wrap: wrap;
+    }
+
+    .speed-row input {
+        flex: 1;
+        min-width: 130px;
+    }
+
+    .visual-header {
+        align-items: flex-start;
+    }
+
+    .state-node {
+        width: 125px;
+    }
+}
+
+/* =========================================================
+   CONNECTED STATE-SPACE TREE
+========================================================= */
+
+.state-tree {
+    overflow: auto;
+    min-height: 500px;
+    max-height: 700px;
+    padding: 25px;
+}
+
+.tree-canvas {
+    position: relative;
+    min-width: 900px;
+    min-height: 450px;
+}
+
+.tree-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.tree-edge {
+    stroke: #cbd4e4;
+    stroke-width: 2;
+    fill: none;
+    transition: stroke .2s, stroke-width .2s;
+}
+
+.tree-edge.take {
+    stroke: #fb8a3e;
+}
+
+.tree-edge.skip {
+    stroke: #9aa7bd;
+}
+
+.tree-edge.active {
+    stroke: var(--navy);
+    stroke-width: 3;
+}
+
+.tree-edge.pruned {
+    stroke: #df8b84;
+    stroke-dasharray: 5 4;
+}
+
+
+/* Actual positioned node */
+
+.state-node {
+    position: absolute;
+    width: 145px;
+    min-height: 95px;
+    z-index: 2;
+}
+
+
+/* Small decision label sitting on the edge */
+
+.tree-edge-label {
+    position: absolute;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: white;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .62rem;
+    font-weight: 800;
+    pointer-events: none;
+}
+
+.tree-edge-label.take {
+    color: #cf641c;
+}
+
+.tree-edge-label.skip {
+    color: #68758b;
+}
+
+.tree-level-label {
+    position: absolute;
+    left: 5px;
+    z-index: 1;
+    color: #9aa5b8;
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+
+/* Slightly smaller nodes for dense trees */
+
+@media (max-width: 680px) {
+
+    .tree-canvas {
+        min-width: 700px;
+    }
+
+    .state-node {
+        width: 125px;
+        min-height: 90px;
+    }
+}
+
+/* =========================================================
+   IMPROVED LIVE STATE-SPACE TREE
+========================================================= */
+
+.state-tree {
+    position: relative;
+    overflow: auto;
+    min-height: 520px;
+    max-height: 700px;
+    padding: 28px;
+    background: #f8f9fd;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    scroll-behavior: smooth;
+}
+
+/* The actual tree drawing area */
+.tree-canvas {
+    position: relative;
+    min-width: 900px;
+    min-height: 500px;
+    margin: 0 auto;
+}
+
+/* SVG connections */
+.tree-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+}
+
+/* Branch lines */
+.tree-edge {
+    fill: none;
+    stroke: #b8c3d7;
+    stroke-width: 2;
+    transition:
+        stroke .2s ease,
+        stroke-width .2s ease,
+        opacity .2s ease;
+}
+
+.tree-edge.take {
+    stroke: #fb8a3e;
+}
+
+.tree-edge.skip {
+    stroke: #98a7bf;
+}
+
+.tree-edge.active {
+    stroke: var(--navy);
+    stroke-width: 3.5;
+}
+
+.tree-edge.pruned {
+    stroke: #d98b84;
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+}
+
+/* =========================================================
+   NODE
+========================================================= */
+
+.state-node {
+    position: absolute;
+
+    width: 120px;
+    min-height: 78px;
+
+    padding: 9px 10px;
+
+    border-radius: 10px;
+    border: 2px solid #cbd5e5;
+
+    background: #ffffff;
+
+    box-shadow: 0 3px 10px rgba(30, 50, 90, .08);
+
+    z-index: 2;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease,
+        border-color .2s ease,
+        box-shadow .2s ease;
+}
+
+/* Current node */
+.state-node.active {
+    border-color: var(--navy);
+    box-shadow:
+        0 0 0 3px rgba(38, 59, 117, .12),
+        0 7px 18px rgba(30, 50, 90, .15);
+
+    transform: scale(1.05);
+    z-index: 5;
+}
+
+/* Explored */
+.state-node.explore {
+    border-color: #7185c4;
+}
+
+/* Pruned */
+.state-node.prune {
+    border-color: #d98b84;
+    background: #fff8f7;
+}
+
+/* Best solution */
+.state-node.best {
+    border-color: #20a58f;
+    background: #f1fcf8;
+}
+
+/* =========================================================
+   EDGE LABELS
+========================================================= */
+
+.tree-edge-label {
+    position: absolute;
+
+    transform: translate(-50%, -50%);
+
+    z-index: 4;
+
+    padding: 3px 6px;
+
+    border-radius: 5px;
+
+    background: #ffffff;
+
+    border: 1px solid #dce3ee;
+
+    font-size: .58rem;
+    font-weight: 850;
+
+    letter-spacing: .03em;
+
+    pointer-events: none;
+
+    white-space: nowrap;
+}
+
+.tree-edge-label.take {
+    color: #cf641c;
+}
+
+.tree-edge-label.skip {
+    color: #66748c;
+}
+
+/* =========================================================
+   TREE HEADER / LEGEND
+========================================================= */
+
+.tree-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-bottom: 12px;
+
+    flex-wrap: wrap;
+}
+
+.tree-zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tree-zoom-controls button {
+    padding: 6px 9px;
+    background: #eef2f8;
+    color: #44526d;
+    border: 1px solid #d8dfeb;
+    border-radius: 7px;
+    font-size: .75rem;
+}
+
+.tree-zoom-value {
+    min-width: 48px;
+    text-align: center;
+    font-size: .75rem;
+    font-weight: 800;
+    color: var(--muted);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 680px) {
+
+    .state-tree {
+        min-height: 450px;
+    }
+
+    .tree-canvas {
+        min-width: 760px;
+    }
+
+    .state-node {
+        width: 110px;
+    }
+}
