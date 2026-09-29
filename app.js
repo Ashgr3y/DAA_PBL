@@ -1,4 +1,5 @@
-/* DAA PBL #20: Exact 0/1 solvers.
+/* DAA PBL #20: Smart Relief Load Optimizer
+   Exact 0/1 Knapsack solvers comparing Backtracking vs Branch & Bound.
    No dynamic programming is used. */
 
 const body = document.querySelector('#itemsBody');
@@ -6,61 +7,120 @@ const capacityInput = document.querySelector('#capacity');
 const message = document.querySelector('#message');
 const results = document.querySelector('#results');
 
-const demoItems = [
-    {name:'Camera',weight:2,value:40},
-    {name:'Laptop',weight:3,value:50},
-    {name:'Water',weight:4,value:35},
-    {name:'Jacket',weight:5,value:10},
-    {name:'Food Pack',weight:9,value:80},
-    {name:'First-aid Kit',weight:7,value:65}
-];
+/* ---------------------------------------------------------
+   REAL-WORLD MISSION SCENARIOS
+--------------------------------------------------------- */
 
+const scenarios = {
+    disaster: {
+        name: 'Disaster Relief',
+        capacity: 500,
+        items: [
+            { name: 'Drinking Water', weight: 100, value: 95 },
+            { name: 'Food Packets', weight: 80, value: 90 },
+            { name: 'First Aid Kits', weight: 40, value: 100 },
+            { name: 'Medicines', weight: 30, value: 100 },
+            { name: 'Blankets', weight: 60, value: 70 },
+            { name: 'Hygiene Kits', weight: 50, value: 65 },
+            { name: 'Shelter Materials', weight: 120, value: 80 },
+            { name: 'Cooking Supplies', weight: 70, value: 55 }
+        ]
+    },
+    medical: {
+        name: 'Medical Supply Transport',
+        capacity: 250,
+        items: [
+            { name: 'Medicines', weight: 30, value: 100 },
+            { name: 'First Aid Kits', weight: 40, value: 95 },
+            { name: 'Vaccination Kits', weight: 50, value: 100 },
+            { name: 'Blood Storage', weight: 60, value: 90 },
+            { name: 'Medical Equipment', weight: 80, value: 85 },
+            { name: 'PPE Kits', weight: 35, value: 75 },
+            { name: 'Sanitation Kits', weight: 45, value: 65 }
+        ]
+    },
+    delivery: {
+        name: 'Priority Delivery',
+        capacity: 300,
+        items: [
+            { name: 'Urgent Package A', weight: 40, value: 95 },
+            { name: 'Urgent Package B', weight: 70, value: 90 },
+            { name: 'Fragile Package', weight: 50, value: 85 },
+            { name: 'Medical Package', weight: 35, value: 100 },
+            { name: 'Express Package', weight: 80, value: 75 },
+            { name: 'Standard Package', weight: 60, value: 50 },
+            { name: 'Electronics', weight: 45, value: 80 }
+        ]
+    },
+    custom: {
+        name: 'Custom Mission',
+        capacity: 100,
+        items: []
+    }
+};
+
+let currentScenarioKey = 'disaster';
 
 /* ---------------------------------------------------------
    INPUT / TABLE FUNCTIONS
 --------------------------------------------------------- */
 
-function itemRow(item={name:'',weight:'',value:''}) {
-
+function itemRow(item = { name: '', weight: '', value: '' }) {
     const tr = document.createElement('tr');
 
     tr.innerHTML = `
         <td>
-            <input aria-label="Item name"
+            <input aria-label="Supply name"
                    value="${escapeHTML(item.name)}"
-                   placeholder="e.g. Laptop">
+                   placeholder="e.g. Drinking Water">
         </td>
 
         <td>
-            <input aria-label="Item weight"
+            <input aria-label="Supply weight (kg)"
                    type="number"
                    min="1"
                    step="1"
-                   value="${item.weight}"
+                   value="${item.weight !== undefined ? item.weight : ''}"
                    placeholder="kg">
         </td>
 
         <td>
-            <input aria-label="Item value"
+            <input aria-label="Supply priority score"
                    type="number"
                    min="0"
                    step="1"
-                   value="${item.value}"
-                   placeholder="₹">
+                   value="${item.value !== undefined ? item.value : ''}"
+                   placeholder="Priority (e.g. 95)">
         </td>
 
         <td>
             <button class="delete"
-                    title="Remove item"
-                    aria-label="Remove item">×</button>
+                    title="Remove supply"
+                    aria-label="Remove supply"
+                    type="button">×</button>
         </td>
     `;
 
-    tr.querySelector('.delete').onclick = () => tr.remove();
+    tr.querySelector('.delete').onclick = () => {
+        tr.remove();
+        markCustomScenario();
+    };
+
+    tr.querySelectorAll('input').forEach(input => {
+        input.oninput = () => markCustomScenario();
+    });
 
     body.append(tr);
 }
 
+function markCustomScenario() {
+    if (currentScenarioKey !== 'custom') {
+        currentScenarioKey = 'custom';
+        document.querySelectorAll('.scenario-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.scenario === 'custom');
+        });
+    }
+}
 
 function escapeHTML(v) {
     return String(v).replace(/[&<>'"]/g, c => ({
@@ -72,33 +132,26 @@ function escapeHTML(v) {
     }[c]));
 }
 
-
 function readProblem() {
-
     const capacity = Number(capacityInput.value);
     const rows = [...body.rows];
 
     if (!Number.isFinite(capacity) ||
         capacity <= 0 ||
         !Number.isInteger(capacity)) {
-
-        throw Error('Capacity must be a positive whole number.');
+        throw Error('Vehicle cargo capacity must be a positive whole number.');
     }
 
     if (!rows.length) {
-        throw Error('Add at least one item before running the solvers.');
+        throw Error('Add at least one supply before running the optimizer.');
     }
 
     if (rows.length > 28) {
-        throw Error(
-            'For a responsive classroom demo, use 28 items or fewer.'
-        );
+        throw Error('For a responsive classroom demo, use 28 supplies or fewer.');
     }
 
-    const items = rows.map((r,i) => {
-
+    const items = rows.map((r, i) => {
         const x = r.querySelectorAll('input');
-
         const name = x[0].value.trim();
         const weight = Number(x[1].value);
         const value = Number(x[2].value);
@@ -111,7 +164,7 @@ function readProblem() {
             value < 0
         ) {
             throw Error(
-                `Item ${i+1} needs a name, positive whole weight, and non-negative whole value.`
+                `Supply ${i + 1} needs a name, positive whole weight (kg), and non-negative whole priority score.`
             );
         }
 
@@ -119,11 +172,22 @@ function readProblem() {
             name,
             weight,
             value,
-            original:i
+            original: i
         };
     });
 
-    return {capacity,items};
+    return { capacity, items };
+}
+
+function readProblemSafe() {
+    try {
+        return readProblem();
+    } catch(e) {
+        return {
+            capacity: Number(capacityInput.value) || 500,
+            items: []
+        };
+    }
 }
 
 
@@ -197,7 +261,7 @@ function backtracking(items, capacity) {
             pruned++;
 
             node.status = 'PRUNE';
-            node.reason = 'Weight exceeds capacity';
+            node.reason = 'Current load exceeds vehicle cargo capacity';
 
             return;
         }
@@ -547,7 +611,7 @@ function branchAndBound(items,capacity) {
             record(
                 node,
                 'PRUNE',
-                'Upper bound cannot beat current best value.'
+                'Upper bound cannot beat current best utility.'
             );
 
             continue;
@@ -644,7 +708,7 @@ function branchAndBound(items,capacity) {
             record(
                 take,
                 'PRUNE',
-                'Weight exceeds capacity.'
+                'Current load exceeds vehicle cargo capacity.'
             );
 
         } else if (
@@ -656,7 +720,7 @@ function branchAndBound(items,capacity) {
             record(
                 take,
                 'PRUNE',
-                'Upper bound cannot beat current best value.'
+                'Upper bound cannot beat current best utility.'
             );
 
         } else {
@@ -694,7 +758,7 @@ function branchAndBound(items,capacity) {
             record(
                 skip,
                 'PRUNE',
-                'Upper bound cannot beat current best value.'
+                'Upper bound cannot beat current best utility.'
             );
 
         } else {
@@ -739,17 +803,88 @@ function formatTime(t) {
 }
 
 
-function renderResult(el,r) {
+function renderVehicleOverview(capacity, r) {
+    const el = document.querySelector('#vehicleOverviewCard');
+    if (!el) return;
+
+    const unused = Math.max(0, capacity - r.weight);
+    const pct = capacity > 0 ? Math.min(100, (r.weight / capacity) * 100) : 0;
+
+    const chipsHTML = r.taken.length
+        ? r.taken.map(it => `
+            <div class="supply-chip">
+                <span class="supply-chip-icon">✓</span>
+                <span><strong>${escapeHTML(it.name)}</strong> (${it.weight} kg · Priority ${it.value})</span>
+            </div>
+        `).join('')
+        : '<p style="color:var(--muted);margin:0;font-size:0.85rem;">No supplies loaded within capacity limit.</p>';
 
     el.innerHTML = `
+        <div class="vehicle-card-header">
+            <div class="vehicle-card-title">
+                <span class="vehicle-icon">🚚</span>
+                <div>
+                    <h3>OPTIMAL RELIEF LOAD</h3>
+                    <p>Vehicle Cargo Allocation Summary</p>
+                </div>
+            </div>
+            <span class="verification verified">✓ Optimum Found</span>
+        </div>
+
+        <div class="vehicle-metrics-grid">
+            <div class="vehicle-metric-item">
+                <span>Vehicle Capacity</span>
+                <strong>${capacity.toLocaleString()}<small>kg</small></strong>
+            </div>
+            <div class="vehicle-metric-item">
+                <span>Selected Load</span>
+                <strong>${r.weight.toLocaleString()}<small>kg</small></strong>
+            </div>
+            <div class="vehicle-metric-item">
+                <span>Unused Capacity</span>
+                <strong>${unused.toLocaleString()}<small>kg</small></strong>
+            </div>
+            <div class="vehicle-metric-item">
+                <span>Maximum Utility</span>
+                <strong>${r.value.toLocaleString()}</strong>
+            </div>
+        </div>
+
+        <div class="capacity-bar-container">
+            <div class="capacity-bar-header">
+                <span>Vehicle Cargo Utilization</span>
+                <span>${r.weight.toLocaleString()} / ${capacity.toLocaleString()} kg (${pct.toFixed(1)}%)</span>
+            </div>
+            <div class="capacity-track">
+                <div class="capacity-fill ${pct > 100 ? 'overload' : ''}" style="width: ${Math.max(3, pct)}%;">
+                    <span class="capacity-fill-text">${pct.toFixed(0)}%</span>
+                </div>
+            </div>
+            <div class="capacity-bar-footer">
+                <span>0 kg</span>
+                <span>Payload Limit: ${capacity.toLocaleString()} kg</span>
+            </div>
+        </div>
+
+        <div class="loaded-supplies-wrap">
+            <span class="loaded-supplies-label">Loaded Supplies (${r.taken.length})</span>
+            <div class="loaded-chips-flex">
+                ${chipsHTML}
+            </div>
+        </div>
+    `;
+}
+
+function renderResult(el, r) {
+    el.innerHTML = `
         <div class="metric">
-            <b>${r.value}</b>
-            <span>Optimal value</span>
+            <b>${r.value.toLocaleString()}</b>
+            <span>Maximum utility</span>
         </div>
 
         <div class="metric">
-            <b>${r.weight}</b>
-            <span>Total weight</span>
+            <b>${r.weight.toLocaleString()} kg</b>
+            <span>Selected load</span>
         </div>
 
         <div class="metric">
@@ -769,261 +904,296 @@ function renderResult(el,r) {
 
         <div class="metric">
             <b>${r.taken.length}</b>
-            <span>Items selected</span>
+            <span>Supplies loaded</span>
         </div>
     `;
 }
 
-
-function renderSelection(el,r) {
-
+function renderSelection(el, r) {
     el.innerHTML = `
-        <strong>Selected:</strong>
+        <strong>Loaded supplies:</strong>
         ${
             r.taken.length
-                ? r.taken.map(i => i.name).join(' · ')
-                : 'No items'
+                ? r.taken.map(i => escapeHTML(i.name)).join(' · ')
+                : 'No supplies'
         }
     `;
 }
 
+function renderDecisionSummary(items, taken, capacity, bbResult) {
+    const container = document.querySelector('#decisionColumns');
+    if (!container) return;
 
-function renderChart(bt,bb) {
+    const takenSet = new Set(taken.map(t => t.original !== undefined ? t.original : t.name));
 
-    const maxNodes =
-        Math.max(bt.nodes,bb.nodes,1);
+    const loadedItems = [];
+    const rejectedItems = [];
 
-    const maxTime =
-        Math.max(bt.time,bb.time,.01);
+    items.forEach((it, idx) => {
+        const idKey = it.original !== undefined ? it.original : it.name;
+        if (takenSet.has(idKey)) {
+            loadedItems.push(it);
+        } else {
+            rejectedItems.push(it);
+        }
+    });
 
-
-    const row = (
-        label,
-        a,
-        b,
-        max,
-        fmt
-    ) => `
-
-        <div class="chart-row">
-
-            <span class="chart-label">
-                ${label}
-            </span>
-
-            <div class="bar-stack">
-
-                <div class="bar-line">
-
-                    <span
-                        class="bar"
-                        style="width:${Math.max(
-                            3,
-                            a/max*100
-                        )}%">
-                    </span>
-
-                    <small>
-                        Backtracking · ${fmt(a)}
-                    </small>
-
+    const loadedHTML = loadedItems.length
+        ? loadedItems.map(it => `
+            <div class="decision-card">
+                <div class="decision-card-top">
+                    <span class="decision-supply-name">✓ ${escapeHTML(it.name)}</span>
+                    <span class="decision-supply-meta">${it.weight} kg · Priority ${it.value}</span>
                 </div>
-
-
-                <div class="bar-line">
-
-                    <span
-                        class="bar bb"
-                        style="width:${Math.max(
-                            3,
-                            b/max*100
-                        )}%">
-                    </span>
-
-                    <small>
-                        Branch &amp; Bound · ${fmt(b)}
-                    </small>
-
+                <div class="decision-reason-text">
+                    <strong>Optimal Selection:</strong> Included in the globally optimal combination that maximizes total utility within the ${capacity} kg payload limit.
                 </div>
-
             </div>
+        `).join('')
+        : '<p style="color:var(--muted);font-size:0.85rem;padding:10px;">No supplies loaded within cargo capacity.</p>';
 
+    const rejectedHTML = rejectedItems.length
+        ? rejectedItems.map(it => {
+            const reason = `Not part of the optimal combination: selecting this supply would displace higher-utility combinations, resulting in lower overall utility than ${bbResult.value}. (Specific capacity cutoffs and upper-bound pruning steps can be inspected in the Live Algorithm Visualization below).`;
+
+            return `
+                <div class="decision-card">
+                    <div class="decision-card-top">
+                        <span class="decision-supply-name">○ ${escapeHTML(it.name)}</span>
+                        <span class="decision-supply-meta">${it.weight} kg · Priority ${it.value}</span>
+                    </div>
+                    <div class="decision-reason-text">
+                        <strong>Allocation Note:</strong> ${reason}
+                    </div>
+                </div>
+            `;
+        }).join('')
+        : '<p style="color:var(--muted);font-size:0.85rem;padding:10px;">All available supplies were loaded into the vehicle!</p>';
+
+    container.innerHTML = `
+        <div class="decision-col">
+            <h3 class="decision-col-title loaded">✓ Loaded Supplies (${loadedItems.length})</h3>
+            <div class="decision-list">${loadedHTML}</div>
+        </div>
+        <div class="decision-col">
+            <h3 class="decision-col-title not-loaded">○ Not Loaded Supplies (${rejectedItems.length})</h3>
+            <div class="decision-list">${rejectedHTML}</div>
+        </div>
+    `;
+}
+
+function renderChart(bt, bb) {
+    const effortCallout = document.querySelector('#effortCallout');
+    if (effortCallout) {
+        if (bb.nodes < bt.nodes) {
+            const diff = bt.nodes - bb.nodes;
+            const pct = ((diff / bt.nodes) * 100).toFixed(1);
+            effortCallout.textContent = `⚡ Branch & Bound explored fewer nodes for this mission (${bb.nodes.toLocaleString()} vs ${bt.nodes.toLocaleString()} nodes, saving ${pct}% search effort).`;
+            effortCallout.style.borderLeftColor = 'var(--aqua)';
+            effortCallout.style.background = '#eefbf9';
+            effortCallout.style.color = '#0e6960';
+        } else if (bt.nodes < bb.nodes) {
+            effortCallout.textContent = `⚡ Backtracking explored fewer nodes for this mission (${bt.nodes.toLocaleString()} vs ${bb.nodes.toLocaleString()} nodes).`;
+            effortCallout.style.borderLeftColor = 'var(--orange)';
+            effortCallout.style.background = '#fff8f2';
+            effortCallout.style.color = '#a24b10';
+        } else {
+            effortCallout.textContent = `⚖️ Both algorithms explored the exact same number of nodes (${bt.nodes.toLocaleString()}) for this mission.`;
+            effortCallout.style.borderLeftColor = 'var(--navy)';
+            effortCallout.style.background = '#f0f3fa';
+            effortCallout.style.color = '#263b75';
+        }
+    }
+
+    const maxNodes = Math.max(bt.nodes, bb.nodes, 1);
+    const maxTime = Math.max(bt.time, bb.time, 0.01);
+
+    const row = (label, a, b, max, fmt) => `
+        <div class="chart-row">
+            <span class="chart-label">${label}</span>
+            <div class="bar-stack">
+                <div class="bar-line">
+                    <span class="bar" style="width:${Math.max(3, (a / max) * 100)}%"></span>
+                    <small>Backtracking · ${fmt(a)}</small>
+                </div>
+                <div class="bar-line">
+                    <span class="bar bb" style="width:${Math.max(3, (b / max) * 100)}%"></span>
+                    <small>Branch &amp; Bound · ${fmt(b)}</small>
+                </div>
+            </div>
         </div>
     `;
 
-
     document.querySelector('#chart').innerHTML =
-        row(
-            'Nodes explored',
-            bt.nodes,
-            bb.nodes,
-            maxNodes,
-            n => n.toLocaleString()
-        )
-        +
-        row(
-            'Execution time',
-            bt.time,
-            bb.time,
-            maxTime,
-            formatTime
-        );
+        row('Nodes explored', bt.nodes, bb.nodes, maxNodes, n => n.toLocaleString()) +
+        row('Execution time', bt.time, bb.time, maxTime, formatTime);
 }
 
+function renderMissionSummary(scenarioKey, capacity, items, bt, bb) {
+    const el = document.querySelector('#missionSummaryPanel');
+    if (!el) return;
+
+    const missionName = scenarios[scenarioKey] ? scenarios[scenarioKey].name : 'Custom Mission';
+    const same = bt.value === bb.value && bt.weight === bb.weight;
+    const notLoadedCount = Math.max(0, items.length - bt.taken.length);
+
+    el.innerHTML = `
+        <div class="mission-summary-header">
+            <h3>MISSION SUMMARY</h3>
+            <span class="mission-summary-badge">${escapeHTML(missionName)}</span>
+        </div>
+        <div class="mission-summary-grid">
+            <div class="mission-summary-cell">
+                <span>Mission</span>
+                <strong>${escapeHTML(missionName)}</strong>
+            </div>
+            <div class="mission-summary-cell">
+                <span>Vehicle Capacity</span>
+                <strong>${capacity.toLocaleString()} kg</strong>
+            </div>
+            <div class="mission-summary-cell">
+                <span>Optimal Load</span>
+                <strong>${bt.weight.toLocaleString()} kg</strong>
+            </div>
+            <div class="mission-summary-cell">
+                <span>Maximum Utility</span>
+                <strong>${bt.value.toLocaleString()}</strong>
+            </div>
+            <div class="mission-summary-cell">
+                <span>Supplies Loaded</span>
+                <strong>${bt.taken.length}</strong>
+            </div>
+            <div class="mission-summary-cell">
+                <span>Supplies Not Loaded</span>
+                <strong>${notLoadedCount}</strong>
+            </div>
+            <div class="mission-summary-cell">
+                <span>Search Method</span>
+                <strong>Backtracking + Branch &amp; Bound</strong>
+            </div>
+        </div>
+        <div class="mission-summary-footer">
+            <span><strong>Verification:</strong> ${same ? '✓ Both exact solvers produced the same optimum' : '! Results differ — check inputs'}</span>
+            <span>0/1 Knapsack Decision Support · DAA PBL #20</span>
+        </div>
+    `;
+}
 
 /* ---------------------------------------------------------
-   PHASE 1: VISUALIZATION PLACEHOLDER
+   VISUALIZATION DATA STORE
 --------------------------------------------------------- */
-
-/*
-   These variables will hold the results so the new
-   visualization can use them.
-*/
 
 let lastBacktrackingResult = null;
 let lastBranchBoundResult = null;
-
 
 /* ---------------------------------------------------------
    MAIN RUN
 --------------------------------------------------------- */
 
 function run() {
-
     try {
-
         message.textContent = '';
 
-        const {capacity,items} = readProblem();
+        const { capacity, items } = readProblem();
 
-        const bt =
-            backtracking(items,capacity);
-
-        const bb =
-            branchAndBound(items,capacity);
-
+        const bt = backtracking(items, capacity);
+        const bb = branchAndBound(items, capacity);
 
         /* Store traces for visualization */
         lastBacktrackingResult = bt;
         lastBranchBoundResult = bb;
 
+        renderVehicleOverview(capacity, bt);
 
-        renderResult(
-            document.querySelector('#btMetrics'),
-            bt
-        );
+        renderResult(document.querySelector('#btMetrics'), bt);
+        renderResult(document.querySelector('#bbMetrics'), bb);
 
-        renderResult(
-            document.querySelector('#bbMetrics'),
-            bb
-        );
+        renderSelection(document.querySelector('#btSelection'), bt);
+        renderSelection(document.querySelector('#bbSelection'), bb);
 
+        renderDecisionSummary(items, bt.taken, capacity, bb);
 
-        renderSelection(
-            document.querySelector('#btSelection'),
-            bt
-        );
+        const same = bt.value === bb.value && bt.weight === bb.weight;
 
-        renderSelection(
-            document.querySelector('#bbSelection'),
-            bb
-        );
+        const v = document.querySelector('#verification');
+        v.textContent = same
+            ? '✓ Verified: both exact solvers produced the same optimum'
+            : '! Results differ — check inputs';
+        v.className = `verification ${same ? 'verified' : 'failed'}`;
 
+        renderChart(bt, bb);
 
-        const same =
-            bt.value === bb.value &&
-            bt.weight === bb.weight;
-
-
-        const v =
-            document.querySelector('#verification');
-
-
-        v.textContent =
-            same
-                ? '✓ Verified: both found the same optimum'
-                : '! Results differ — check inputs';
-
-
-        v.className =
-            `verification ${same?'verified':'failed'}`;
-
-
-        renderChart(bt,bb);
+        renderMissionSummary(currentScenarioKey, capacity, items, bt, bb);
 
         results.hidden = false;
 
         results.scrollIntoView({
-            behavior:'smooth',
-            block:'start'
+            behavior: 'smooth',
+            block: 'start'
         });
 
         startVisualization();
-
-
-        console.log(
-            'Backtracking trace:',
-            bt.trace
-        );
-
-        console.log(
-            'Branch & Bound trace:',
-            bb.trace
-        );
-
-    }
-
-    catch(e) {
-
+    } catch(e) {
         results.hidden = true;
-
-        message.textContent =
-            e.message;
+        visualizationPanel.hidden = true;
+        message.textContent = e.message;
+        message.style.color = '#c84038';
     }
 }
 
-
 /* ---------------------------------------------------------
-   BUTTONS
+   SCENARIOS & BUTTONS
 --------------------------------------------------------- */
 
-document.querySelector('#addItemBtn').onclick =
-    () => itemRow();
+function loadScenario(key) {
+    currentScenarioKey = key;
+    const scenario = scenarios[key];
+    if (!scenario) return;
 
+    document.querySelectorAll('.scenario-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.scenario === key);
+    });
 
-document.querySelector('#runBtn').onclick =
-    run;
-
-
-document.querySelector('#demoBtn').onclick =
-    () => {
-
-        capacityInput.value = 15;
-
+    if (key !== 'custom') {
+        capacityInput.value = scenario.capacity;
         body.innerHTML = '';
+        scenario.items.forEach(it => itemRow(it));
+        message.textContent = `Loaded preset: ${scenario.name} (${scenario.capacity} kg vehicle payload limit).`;
+        message.style.color = 'var(--navy)';
+    } else {
+        message.textContent = 'Custom mission mode: configure your own vehicle capacity and supplies list.';
+        message.style.color = 'var(--navy)';
+    }
 
-        demoItems.forEach(itemRow);
+    results.hidden = true;
+    visualizationPanel.hidden = true;
+    stopAnimation();
+}
 
-        message.textContent =
-            'Demo loaded: try running both solvers.';
-
-        results.hidden = true;
+document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.onclick = () => {
+        loadScenario(btn.dataset.scenario);
     };
+});
 
+document.querySelector('#addItemBtn').onclick = () => {
+    itemRow();
+    markCustomScenario();
+};
 
-document.querySelector('#resetBtn').onclick =
-    () => {
+document.querySelector('#runBtn').onclick = run;
 
-        capacityInput.value = '';
-
-        body.innerHTML = '';
-
-        itemRow();
-
-        message.textContent = '';
-
-        results.hidden = true;
-    };
+document.querySelector('#resetBtn').onclick = () => {
+    capacityInput.value = '';
+    body.innerHTML = '';
+    itemRow();
+    message.textContent = 'Inputs reset. Enter custom vehicle capacity and supplies.';
+    message.style.color = 'var(--muted)';
+    results.hidden = true;
+    visualizationPanel.hidden = true;
+    stopAnimation();
+    loadScenario('custom');
+};
 
 /* =========================================================
    PHASE 1 — LIVE STATE-SPACE VISUALIZATION
@@ -1265,8 +1435,9 @@ function renderTree() {
         new Map();
 
     const nodeWidth = 120;
-    const horizontalGap = 22;
-    const verticalGap = 115;
+    const nodeHeight = 82;
+    const horizontalGap = 20;
+    const verticalGap = 130;
 
     let nextLeafX = 0;
 
@@ -1420,6 +1591,11 @@ function renderTree() {
 
     canvas.style.marginRight = '40px';
 
+    if (typeof treeZoom === 'number' && treeZoom !== 1) {
+        canvas.style.transform = `scale(${treeZoom})`;
+        canvas.style.transformOrigin = 'top center';
+    }
+
 
     /*
        SVG for actual connecting lines.
@@ -1482,7 +1658,7 @@ function renderTree() {
             parent.x + nodeWidth / 2;
 
         const y1 =
-            parent.y + 95;
+            parent.y + nodeHeight;
 
         const x2 =
             child.x + nodeWidth / 2;
@@ -1714,8 +1890,8 @@ function createNodeElement(node) {
         <div class="node-item">
             ${
                 node.item
-                    ? node.item
-                    : 'All items decided'
+                    ? escapeHTML(node.item)
+                    : 'All supplies decided'
             }
         </div>
 
@@ -1723,12 +1899,12 @@ function createNodeElement(node) {
         <div class="node-values">
 
             <span>
-                W:
-                <strong>${node.weight}</strong>
+                Load:
+                <strong>${node.weight}kg</strong>
             </span>
 
             <span>
-                V:
+                Utility:
                 <strong>${node.value}</strong>
             </span>
 
@@ -1908,35 +2084,21 @@ function selectVisualNode(id) {
 --------------------------------------------------------- */
 
 function showNode(node) {
-
     if (!node) {
-
-        selectedNodeTitle.textContent =
-            'No node selected';
-
+        selectedNodeTitle.textContent = 'No node selected';
         nodeDetails.innerHTML = `
             <div class="detail-empty">
-                Press <strong>Play</strong> or
-                <strong>Next</strong> to inspect a node.
+                Press <strong>Play</strong> or <strong>Next</strong> to inspect a node.
             </div>
         `;
-
         upperBoundPanel.hidden = true;
-
         return;
     }
 
+    selectedNodeTitle.textContent = `Node #${node.id}`;
 
-    selectedNodeTitle.textContent =
-        `Node #${node.id}`;
-
-    const currentElement =
-        stateTree.querySelector(
-            `[data-node-id="${node.id}"]`
-        );
-
+    const currentElement = stateTree.querySelector(`[data-node-id="${node.id}"]`);
     if (currentElement) {
-
         currentElement.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
@@ -1944,252 +2106,218 @@ function showNode(node) {
         });
     }
 
+    const capacity = Number(capacityInput.value) || 500;
+    const remainingCap = Math.max(0, capacity - node.weight);
+
+    let statusDisplay = node.status;
+    let methodExplanationHTML = '';
+
+    if (visualAlgorithm === 'bt') {
+        if (node.status === 'PRUNE') {
+            statusDisplay = '🚫 PRUNED';
+            methodExplanationHTML = `
+                <div class="execution-reason" style="background:#fff0ee;color:#bd4c45;border:1px solid #ffd0cc;">
+                    <strong>PRUNED:</strong> This branch exceeds the vehicle's cargo capacity.<br>
+                    <small>Reason: current load (${node.weight} kg) exceeds vehicle payload limit (${capacity} kg).</small>
+                </div>
+            `;
+        } else if (node.status === 'BEST') {
+            statusDisplay = '★ OPTIMAL';
+            methodExplanationHTML = `
+                <div class="execution-reason" style="background:#daf7ed;color:#0c6a4f;border:1px solid #b7ecd9;">
+                    <strong>OPTIMAL LOAD UPDATE:</strong> Feasible combination achieving maximum utility ${node.bestValue} (${node.bestWeight} kg).
+                </div>
+            `;
+        } else {
+            statusDisplay = node.status === 'EXPLORE' ? '✓ EXPLORE' : node.status;
+            methodExplanationHTML = `
+                <div class="execution-reason">
+                    <strong>Backtracking search:</strong> Explores TAKE/SKIP decisions depth-first.
+                </div>
+            `;
+        }
+    } else {
+        // Branch & Bound
+        if (node.status === 'PRUNE') {
+            statusDisplay = '🚫 PRUNED';
+            let reasonText = node.reason;
+            if (!reasonText) {
+                reasonText = node.weight > capacity
+                    ? 'Current load exceeds vehicle cargo capacity.'
+                    : 'Branch pruned because even its optimistic upper bound cannot improve the current best solution.';
+            }
+            methodExplanationHTML = `
+                <div class="execution-reason" style="background:#fff0ee;color:#bd4c45;border:1px solid #ffd0cc;">
+                    <strong>PRUNED:</strong> ${escapeHTML(reasonText)}
+                </div>
+            `;
+        } else if (node.status === 'BEST') {
+            statusDisplay = '★ OPTIMAL';
+            methodExplanationHTML = `
+                <div class="execution-reason" style="background:#daf7ed;color:#0c6a4f;border:1px solid #b7ecd9;">
+                    <strong>OPTIMAL SOLUTION FOUND:</strong> Complete cargo plan achieving highest possible utility (${node.bestValue}).
+                </div>
+            `;
+        } else {
+            statusDisplay = '✓ EXPLORE';
+            methodExplanationHTML = `
+                <div class="execution-reason">
+                    <strong>Branch &amp; Bound search:</strong> Best-first expansion prioritized by highest optimistic fractional upper bound.
+                </div>
+            `;
+        }
+    }
 
     nodeDetails.innerHTML = `
-
         <div class="detail-grid">
-
             <div class="detail-cell">
                 <span>Decision</span>
-                <strong>${node.decision}</strong>
+                <strong>${node.decision === 'ROOT' ? 'START' : node.decision}</strong>
             </div>
 
             <div class="detail-cell">
-                <span>Level</span>
-                <strong>${node.level}</strong>
+                <span>Decision Level</span>
+                <strong>Level ${node.level}</strong>
             </div>
 
             <div class="detail-cell">
-                <span>Current weight</span>
-                <strong>${node.weight}</strong>
+                <span>Current Load</span>
+                <strong>${node.weight} kg</strong>
             </div>
 
             <div class="detail-cell">
-                <span>Current value</span>
+                <span>Current Utility</span>
                 <strong>${node.value}</strong>
             </div>
 
+            <div class="detail-cell">
+                <span>Remaining Capacity</span>
+                <strong>${remainingCap} kg</strong>
+            </div>
+
+            <div class="detail-cell">
+                <span>Status</span>
+                <strong>${statusDisplay}</strong>
+            </div>
         </div>
 
         ${
             node.item
                 ? `
                     <div class="execution-reason">
-                        <strong>Item:</strong>
+                        <strong>Supply:</strong>
                         ${escapeHTML(node.item)}
                     </div>
                   `
-                : ''
+                : '<div class="execution-reason"><strong>Supply:</strong> All supplies evaluated</div>'
         }
 
-        <div class="execution-reason">
-            <strong>Status:</strong>
-            ${node.status}
-            ${
-                node.reason
-                    ? ` — ${node.reason}`
-                    : ''
-            }
-        </div>
+        ${methodExplanationHTML}
     `;
 
-
     if (visualAlgorithm === 'bb') {
-
         renderUpperBound(node);
-
     } else {
-
         upperBoundPanel.hidden = true;
     }
-
 
     highlightNode(node.id);
 }
 
-
-/* ---------------------------------------------------------
-   HIGHLIGHT NODE
---------------------------------------------------------- */
-
 function highlightNode(id) {
+    stateTree.querySelectorAll('.state-node').forEach(el => {
+        el.classList.toggle('active', Number(el.dataset.nodeId) === id);
+    });
 
-    stateTree
-        .querySelectorAll('.state-node')
-        .forEach(el => {
-
-            el.classList.toggle(
-                'active',
-                Number(el.dataset.nodeId) === id
-            );
-        });
-
-
-    const active =
-        stateTree.querySelector(
-            `.state-node[data-node-id="${id}"]`
-        );
-
-
+    const active = stateTree.querySelector(`.state-node[data-node-id="${id}"]`);
     if (active) {
+        const treeRect = stateTree.getBoundingClientRect();
+        const activeRect = active.getBoundingClientRect();
 
-        active.scrollIntoView({
-            behavior:'smooth',
-            block:'nearest',
-            inline:'center'
+        const targetScrollLeft = stateTree.scrollLeft + (activeRect.left - treeRect.left) - (treeRect.width / 2) + (activeRect.width / 2);
+        const targetScrollTop = stateTree.scrollTop + (activeRect.top - treeRect.top) - (treeRect.height / 2) + (activeRect.height / 2);
+
+        stateTree.scrollTo({
+            left: Math.max(0, targetScrollLeft),
+            top: Math.max(0, targetScrollTop),
+            behavior: 'smooth'
         });
     }
 }
 
-
-/* ---------------------------------------------------------
-   BRANCH & BOUND UPPER-BOUND PANEL
---------------------------------------------------------- */
-
 function renderUpperBound(node) {
-
     upperBoundPanel.hidden = false;
 
+    const capacity = Number(capacityInput.value) || 500;
+    const remainingCap = node.remainingCapacity !== undefined
+        ? node.remainingCapacity
+        : Math.max(0, capacity - node.weight);
 
-    document.querySelector('#boundDecision')
-        .textContent =
-            node.decision === 'ROOT'
-                ? 'ROOT'
-                : node.decision;
+    document.querySelector('#boundDecision').textContent =
+        node.decision === 'ROOT' ? 'START' : node.decision;
 
+    document.querySelector('#boundCurrentValue').textContent =
+        node.value;
 
-    document.querySelector('#boundCurrentValue')
-        .textContent =
-            node.value;
+    document.querySelector('#boundCurrentWeight').textContent =
+        `${node.weight} kg`;
 
+    document.querySelector('#boundRemaining').textContent =
+        `${remainingCap} kg`;
 
-    document.querySelector('#boundCurrentWeight')
-        .textContent =
-            node.weight;
+    const boundNum = Number.isFinite(node.bound) ? node.bound : null;
+    const boundStr = boundNum !== null ? boundNum.toFixed(2) : '—';
+    document.querySelector('#boundValue').textContent = boundStr;
 
+    const best = node.bestValue !== undefined
+        ? node.bestValue
+        : getBestValueAtNode(node.id);
 
-    document.querySelector('#boundRemaining')
-        .textContent =
-            node.remainingCapacity;
+    document.querySelector('#boundBest').textContent = best;
 
+    const steps = document.querySelector('#boundSteps');
 
-    document.querySelector('#boundValue')
-        .textContent =
-            Number.isFinite(node.bound)
-                ? node.bound.toFixed(2)
-                : '∞';
-
-
-    /*
-       bestValue is stored when the algorithm
-       discovers a better solution.
-
-       For nodes without an explicit bestValue,
-       we show the best solution currently known
-       up to this point.
-    */
-
-    const best =
-        node.bestValue !== undefined
-            ? node.bestValue
-            : getBestValueAtNode(node.id);
-
-
-    document.querySelector('#boundBest')
-        .textContent =
-            best;
-
-
-    const steps =
-        document.querySelector('#boundSteps');
-
-
-    if (!node.boundSteps ||
-        !node.boundSteps.length) {
-
+    if (!node.boundSteps || !node.boundSteps.length) {
         steps.innerHTML = `
             <div class="bound-step">
-                <span>Current value</span>
+                <span>Current utility</span>
                 <strong>${node.value}</strong>
             </div>
         `;
-
     } else {
-
-        steps.innerHTML =
-            node.boundSteps.map(step => {
-
-                if (step.type === 'FULL') {
-
-                    return `
-                        <div class="bound-step">
-
-                            <span>
-                                + ${escapeHTML(step.item)}
-                                <small>(full)</small>
-                            </span>
-
-                            <strong>
-                                +${step.amount.toFixed(2)}
-                            </strong>
-
-                        </div>
-                    `;
-
-                }
-
-
+        steps.innerHTML = node.boundSteps.map(step => {
+            if (step.type === 'FULL') {
                 return `
                     <div class="bound-step">
-
-                        <span>
-                            + ${escapeHTML(step.item)}
-                            <small>
-                                (${(step.fraction * 100).toFixed(1)}%)
-                            </small>
-                        </span>
-
-                        <strong>
-                            +${step.amount.toFixed(2)}
-                        </strong>
-
+                        <span>+ ${escapeHTML(step.item)} <small>(full · ${step.weight} kg)</small></span>
+                        <strong>+${step.amount.toFixed(1)}</strong>
                     </div>
                 `;
-
-            }).join('');
+            }
+            return `
+                <div class="bound-step">
+                    <span>+ ${escapeHTML(step.item)} <small>(${step.weight} kg · ${(step.fraction * 100).toFixed(0)}%)</small></span>
+                    <strong>+${step.amount.toFixed(1)}</strong>
+                </div>
+            `;
+        }).join('');
     }
 
-
-    const reason =
-        document.querySelector('#boundReason');
-
+    const reason = document.querySelector('#boundReason');
 
     if (node.status === 'PRUNE') {
-
-        reason.className =
-            'bound-reason pruned';
-
-        reason.textContent =
-            `✕ PRUNE — ${node.reason}`;
-
-    } else {
-
-        reason.className =
-            'bound-reason';
-
-        if (
-            Number.isFinite(node.bound) &&
-            node.bound >= best
-        ) {
-
-            reason.textContent =
-                '✓ EXPLORE — Upper bound can still reach or exceed the current best.';
-
+        reason.className = 'bound-reason pruned';
+        if (node.weight > capacity) {
+            reason.innerHTML = `🚫 <strong>Branch Pruned:</strong> Exceeds cargo capacity (${node.weight} kg > ${capacity} kg limit).`;
         } else {
-
-            reason.textContent =
-                '✓ Node is being evaluated.';
-
+            reason.innerHTML = `🚫 <strong>Branch Pruned:</strong> Upper bound (${boundStr}) &lt; Current Best (${best}). Branch pruned because even its optimistic upper bound cannot improve the current best solution.`;
+        }
+    } else {
+        reason.className = 'bound-reason';
+        if (boundNum !== null && boundNum >= best) {
+            reason.innerHTML = `✓ <strong>Potentially Promising:</strong> Upper bound (${boundStr} ≥ ${best}) can still reach or exceed the current best solution.`;
+        } else {
+            reason.innerHTML = `✓ <strong>Active Evaluation:</strong> Node is under exploration.`;
         }
     }
 }
@@ -2427,5 +2555,43 @@ stepBtn.onclick =
 
 restartVisualBtn.onclick =
     restartVisualization;
-    
-demoItems.forEach(itemRow);
+
+/* ---------------------------------------------------------
+   TREE ZOOM CONTROLS
+--------------------------------------------------------- */
+
+let treeZoom = 1;
+
+function applyTreeZoom(delta) {
+    if (delta === 0) {
+        treeZoom = 1;
+    } else {
+        treeZoom = Math.min(1.6, Math.max(0.4, Number((treeZoom + delta).toFixed(2))));
+    }
+
+    const canvas = stateTree.querySelector('.tree-canvas');
+    if (canvas) {
+        canvas.style.transform = `scale(${treeZoom})`;
+        canvas.style.transformOrigin = 'top center';
+    }
+
+    const zoomVal = document.querySelector('#zoomValue');
+    if (zoomVal) {
+        zoomVal.textContent = `${Math.round(treeZoom * 100)}%`;
+    }
+}
+
+const zoomInBtn = document.querySelector('#zoomInBtn');
+if (zoomInBtn) zoomInBtn.onclick = () => applyTreeZoom(0.15);
+
+const zoomOutBtn = document.querySelector('#zoomOutBtn');
+if (zoomOutBtn) zoomOutBtn.onclick = () => applyTreeZoom(-0.15);
+
+const zoomResetBtn = document.querySelector('#zoomResetBtn');
+if (zoomResetBtn) zoomResetBtn.onclick = () => applyTreeZoom(0);
+
+/* ---------------------------------------------------------
+   DEFAULT INITIALIZATION
+--------------------------------------------------------- */
+
+loadScenario('disaster');
